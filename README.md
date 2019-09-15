@@ -1,6 +1,6 @@
 # flutter_login
 
-[![Flutter](https://cdn.arstechnica.net/wp-content/uploads/2018/12/7-800x272.jpg)
+![Flutter](https://cdn.arstechnica.net/wp-content/uploads/2018/12/7-800x272.jpg)
 
 **A sample Flutter project for username/email login and Firebase services with...**
 - Email verification
