@@ -19,9 +19,9 @@
 	<key>BUNDLE_ID</key>
 	<string>com.example.flutterLoginDemo</string>
 	<key>PROJECT_ID</key>
-	<string>flutter-login-demo-5f414</string>
+	<string>flutter-login-demo-f4385</string>
 	<key>STORAGE_BUCKET</key>
-	<string>flutter-login-demo-5f414.appspot.com</string>
+	<string>flutter-login-demo-f4385.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<true></true>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -35,6 +35,6 @@
 	<key>GOOGLE_APP_ID</key>
 	<string>1:503370235857:ios:fae8bbf356b4bb88</string>
 	<key>DATABASE_URL</key>
-	<string>https://flutter-login-demo-5f414.firebaseio.com</string>
+	<string>https://flutter-login-demo-f4385.firebaseio.com</string>
 </dict>
 </plist>

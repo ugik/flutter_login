@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_login_demo/services/authentication.dart';
+import 'package:flutter_login/services/authentication.dart';
 
 class LoginSignUpPage extends StatefulWidget {
-  LoginSignUpPage({this.auth, this.onSignedIn});
+  LoginSignUpPage({this.params, this.auth, this.onSignedIn});
 
+  final Map params;
   final BaseAuth auth;
   final VoidCallback onSignedIn;
 
@@ -11,7 +12,7 @@ class LoginSignUpPage extends StatefulWidget {
   State<StatefulWidget> createState() => new _LoginSignUpPageState();
 }
 
-enum FormMode { LOGIN, SIGNUP }
+enum FormMode { LOGIN, SIGNUP, FORGOTPASSWORD }
 
 class _LoginSignUpPageState extends State<LoginSignUpPage> {
   final _formKey = new GlobalKey<FormState>();
@@ -46,34 +47,36 @@ class _LoginSignUpPageState extends State<LoginSignUpPage> {
       try {
         if (_formMode == FormMode.LOGIN) {
           userId = await widget.auth.signIn(_email, _password);
-          print('Signed in: $userId');
-        } else {
+        } else if (_formMode == FormMode.SIGNUP) {
           userId = await widget.auth.signUp(_email, _password);
           widget.auth.sendEmailVerification();
           _showVerifyEmailSentDialog();
-          print('Signed up user: $userId');
+        } else {
+          widget.auth.sendPasswordReset(_email);
+          _showPasswordEmailSentDialog();
         }
         setState(() {
           _isLoading = false;
         });
 
-        if (userId.length > 0 && userId != null && _formMode == FormMode.LOGIN) {
+        if (userId.length > 0 &&
+            userId != null &&
+            _formMode == FormMode.LOGIN) {
           widget.onSignedIn();
         }
-
       } catch (e) {
         print('Error: $e');
         setState(() {
           _isLoading = false;
-          if (_isIos) {
-            _errorMessage = e.details;
-          } else
-            _errorMessage = e.message;
+          _isIos ? _errorMessage = e.details : _errorMessage = e.message;
         });
       }
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
-
 
   @override
   void initState() {
@@ -98,12 +101,20 @@ class _LoginSignUpPageState extends State<LoginSignUpPage> {
     });
   }
 
+  void _changeFormToPasswordReset() {
+    _formKey.currentState.reset();
+    _errorMessage = "";
+    setState(() {
+      _formMode = FormMode.FORGOTPASSWORD;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     _isIos = Theme.of(context).platform == TargetPlatform.iOS;
     return new Scaffold(
         appBar: new AppBar(
-          title: new Text('Flutter login demo'),
+          title: new Text(widget.params['appName']),
         ),
         body: Stack(
           children: <Widget>[
@@ -113,11 +124,14 @@ class _LoginSignUpPageState extends State<LoginSignUpPage> {
         ));
   }
 
-  Widget _showCircularProgress(){
+  Widget _showCircularProgress() {
     if (_isLoading) {
       return Center(child: CircularProgressIndicator());
-    } return Container(height: 0.0, width: 0.0,);
-
+    }
+    return Container(
+      height: 0.0,
+      width: 0.0,
+    );
   }
 
   void _showVerifyEmailSentDialog() {
@@ -127,7 +141,8 @@ class _LoginSignUpPageState extends State<LoginSignUpPage> {
         // return object of type Dialog
         return AlertDialog(
           title: new Text("Verify your account"),
-          content: new Text("Link to verify account has been sent to your email"),
+          content:
+              new Text("Link to verify account has been sent to your email"),
           actions: <Widget>[
             new FlatButton(
               child: new Text("Dismiss"),
@@ -142,7 +157,29 @@ class _LoginSignUpPageState extends State<LoginSignUpPage> {
     );
   }
 
-  Widget _showBody(){
+  void _showPasswordEmailSentDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          title: new Text("Forgot your password"),
+          content: new Text("An email has been sent to reset your password"),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text("Dismiss"),
+              onPressed: () {
+                _changeFormToLogin();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _showBody() {
     return new Container(
         padding: EdgeInsets.all(16.0),
         child: new Form(
@@ -155,6 +192,7 @@ class _LoginSignUpPageState extends State<LoginSignUpPage> {
               _showPasswordInput(),
               _showPrimaryButton(),
               _showSecondaryButton(),
+              _showForgotPasswordButton(),
               _showErrorMessage(),
             ],
           ),
@@ -212,36 +250,29 @@ class _LoginSignUpPageState extends State<LoginSignUpPage> {
   }
 
   Widget _showPasswordInput() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
-      child: new TextFormField(
-        maxLines: 1,
-        obscureText: true,
-        autofocus: false,
-        decoration: new InputDecoration(
-            hintText: 'Password',
-            icon: new Icon(
-              Icons.lock,
-              color: Colors.grey,
-            )),
-        validator: (value) => value.isEmpty ? 'Password can\'t be empty' : null,
-        onSaved: (value) => _password = value.trim(),
-      ),
-    );
-  }
-
-  Widget _showSecondaryButton() {
-    return new FlatButton(
-      child: _formMode == FormMode.LOGIN
-          ? new Text('Create an account',
-              style: new TextStyle(fontSize: 18.0, fontWeight: FontWeight.w300))
-          : new Text('Have an account? Sign in',
-              style:
-                  new TextStyle(fontSize: 18.0, fontWeight: FontWeight.w300)),
-      onPressed: _formMode == FormMode.LOGIN
-          ? _changeFormToSignUp
-          : _changeFormToLogin,
-    );
+    if (_formMode != FormMode.FORGOTPASSWORD) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
+        child: new TextFormField(
+          maxLines: 1,
+          obscureText: true,
+          autofocus: false,
+          decoration: new InputDecoration(
+              hintText: 'Password',
+              icon: new Icon(
+                Icons.lock,
+                color: Colors.grey,
+              )),
+          validator: (value) =>
+              value.isEmpty ? 'Password can\'t be empty' : null,
+          onSaved: (value) => _password = value.trim(),
+        ),
+      );
+    } else {
+      return new Text('An email will be sent allowing you to reset your password',
+          style:
+          new TextStyle(fontSize: 14.0, fontWeight: FontWeight.w300));
+    }
   }
 
   Widget _showPrimaryButton() {
@@ -251,15 +282,69 @@ class _LoginSignUpPageState extends State<LoginSignUpPage> {
           height: 40.0,
           child: new RaisedButton(
             elevation: 5.0,
-            shape: new RoundedRectangleBorder(borderRadius: new BorderRadius.circular(30.0)),
-            color: Colors.blue,
-            child: _formMode == FormMode.LOGIN
-                ? new Text('Login',
-                    style: new TextStyle(fontSize: 20.0, color: Colors.white))
-                : new Text('Create account',
-                    style: new TextStyle(fontSize: 20.0, color: Colors.white)),
+            shape: new RoundedRectangleBorder(
+                borderRadius: new BorderRadius.circular(30.0)),
+            color: widget.params['buttonColor'],
+            child: _textPrimaryButton(),
             onPressed: _validateAndSubmit,
           ),
         ));
+  }
+
+  Widget _showSecondaryButton() {
+    return new FlatButton(
+      child: _textSecondaryButton(),
+      onPressed: _formMode == FormMode.LOGIN
+          ? _changeFormToSignUp
+          : _changeFormToLogin,
+    );
+  }
+
+  Widget _showForgotPasswordButton() {
+    return new FlatButton(
+      child: _formMode == FormMode.LOGIN
+          ? new Text('Forgot password?',
+              style: new TextStyle(fontSize: 15.0, fontWeight: FontWeight.w300))
+          : new Text('',
+              style:
+                  new TextStyle(fontSize: 15.0, fontWeight: FontWeight.w300)),
+      onPressed: _changeFormToPasswordReset,
+    );
+  }
+
+  Widget _textPrimaryButton() {
+    switch (_formMode) {
+      case FormMode.LOGIN:
+        return new Text('Login',
+            style: new TextStyle(fontSize: 20.0, color: Colors.white));
+        break;
+      case FormMode.SIGNUP:
+        return new Text('Create account',
+            style: new TextStyle(fontSize: 20.0, color: Colors.white));
+        break;
+      case FormMode.FORGOTPASSWORD:
+        return new Text('Reset password',
+            style: new TextStyle(fontSize: 20.0, color: Colors.white));
+        break;
+    }
+    return new Spacer();
+  }
+
+  Widget _textSecondaryButton() {
+    switch (_formMode) {
+      case FormMode.LOGIN:
+        return new Text('Create an account',
+            style: new TextStyle(fontSize: 18.0, fontWeight: FontWeight.w300));
+        break;
+      case FormMode.SIGNUP:
+        return new Text('Have an account? Sign in',
+            style: new TextStyle(fontSize: 18.0, fontWeight: FontWeight.w300));
+        break;
+      case FormMode.FORGOTPASSWORD:
+        return new Text('Enter your email address or ... Cancel',
+            style: new TextStyle(fontSize: 18.0, fontWeight: FontWeight.w300));
+        break;
+    }
+    return new Spacer();
   }
 }

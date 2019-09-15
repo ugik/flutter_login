@@ -1,4 +1,4 @@
-# flutter_login_demo
+# flutter_login
 
 A sample Flutter project to show case user login and signup process with Firebase authentication. 
 It also shows how to perform CRUD operations with Firebase Real Time Database using simple todo list application.

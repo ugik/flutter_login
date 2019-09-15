@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_login_demo/pages/login_signup_page.dart';
-import 'package:flutter_login_demo/services/authentication.dart';
-import 'package:flutter_login_demo/pages/home_page.dart';
+import 'package:flutter_login/pages/login_signup_page.dart';
+import 'package:flutter_login/services/authentication.dart';
+import 'package:flutter_login/pages/home_page.dart';
 
 class RootPage extends StatefulWidget {
-  RootPage({this.auth});
+  RootPage({this.params, this.auth});
 
   final BaseAuth auth;
+  final Map params;
 
   @override
   State<StatefulWidget> createState() => new _RootPageState();
@@ -19,6 +20,7 @@ enum AuthStatus {
 }
 
 class _RootPageState extends State<RootPage> {
+
   AuthStatus authStatus = AuthStatus.NOT_DETERMINED;
   String _userId = "";
 
@@ -55,7 +57,7 @@ class _RootPageState extends State<RootPage> {
     });
   }
 
-  Widget _buildWaitingScreen() {
+  Widget _waitingScreen() {
     return Scaffold(
       body: Container(
         alignment: Alignment.center,
@@ -66,14 +68,13 @@ class _RootPageState extends State<RootPage> {
 
   @override
   Widget build(BuildContext context) {
+
     switch (authStatus) {
-      case AuthStatus.NOT_DETERMINED:
-        return _buildWaitingScreen();
-        break;
       case AuthStatus.NOT_LOGGED_IN:
         return new LoginSignUpPage(
           auth: widget.auth,
           onSignedIn: _onLoggedIn,
+          params: widget.params,
         );
         break;
       case AuthStatus.LOGGED_IN:
@@ -82,11 +83,12 @@ class _RootPageState extends State<RootPage> {
             userId: _userId,
             auth: widget.auth,
             onSignedOut: _onSignedOut,
+            params: widget.params,
           );
-        } else return _buildWaitingScreen();
+        } else return _waitingScreen();
         break;
       default:
-        return _buildWaitingScreen();
+        return _waitingScreen();
     }
   }
 }
